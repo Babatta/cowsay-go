@@ -1,0 +1,60 @@
+name: Build, Deploy, and Publish Docker Image
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Exécution quotidienne (minuit)
+  push:
+    branches:
+      - main  # S'exécute lorsqu'il y a des push sur la branche main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : Vérifier le code source
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Étape 2 : Installer Go
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.20'  # Assurez-vous que c'est la version de Go que vous voulez utiliser
+
+      # Étape 3 : Installer les dépendances
+      - name: Install dependencies
+        run: go mod tidy
+
+      # Étape 4 : Compiler le code Go
+      - name: Build Go program
+        run: go build -o cowsay .
+
+      # Étape 5 : Déploiement (ici, vous pouvez configurer votre serveur)
+      - name: Deploy to server (simulé)
+        run: echo "Deploying to server..."
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      # Étape 1 : Vérifier le code source
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Étape 2 : Créer une image Docker
+      - name: Build Docker image
+        run: |
+          docker build -t yourdockerhubusername/cowsay-go:latest .
+
+      # Étape 3 : Connexion à DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Étape 4 : Pousser l'image Docker vers DockerHub
+      - name: Push Docker image
+        run: |
+          docker push yourdockerhubusername/cowsay-go:latest
