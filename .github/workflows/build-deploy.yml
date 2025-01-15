@@ -1,49 +1,11 @@
-name: Build & Deploy
+name: Deploy Go Application
 
 on:
   push:
     branches:
-      - main
+      - main  # Déclenche le workflow sur un push à la branche main
 
 jobs:
-  # Job de Build
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Étape 1 : Installer Go et autres dépendances
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.20'
-
-      - name: Install dependencies
-        run: go mod tidy
-
-      # Étape 2 : Compiler le programme Go
-      - name: Build Go program
-        run: go build -o bin/cowsay .
-
-      # Étape 3 : Construire et pousser l'image Docker
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: battaba/cowsay-go:latest
-          labels: ${{ steps.meta.outputs.labels }}
-
-      # Étape 4 : Sauvegarder le binaire en tant qu'artefact
-      - name: Save binary as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: cowsay-binary
-          path: bin/cowsay
-
   # Job de Déploiement
   deploy:
     runs-on: self-hosted  # Utilisation d'un runner auto-hébergé
@@ -54,8 +16,8 @@ jobs:
       - name: Download binary artifact
         uses: actions/download-artifact@v3
         with:
-          name: cowsay-binary
-          path: ./bin
+          name: cowsay-binary  # Nom de l'artefact téléchargé
+          path: ./bin          # Répertoire où le binaire sera téléchargé
 
       # Étape 2 : Déployer l'application sur le serveur
       - name: Deploy application on server
