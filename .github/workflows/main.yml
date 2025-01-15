@@ -30,17 +30,18 @@ jobs:
       - name: Build Go program
         run: go build -o cowsay .
 
-      # Étape 5 : Déploiement vers le serveur via SSH
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v0.1.5
+      # Étape 5 : Connexion à Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.SERVER_IP }}          # L'IP de votre serveur
-          username: ${{ student }}    # Le nom d'utilisateur sur votre serveur
-          key: ${{ secrets.SSH_PRIVATE_KEY }}     # La clé privée SSH ajoutée à GitHub Secrets
-          port: 22                                # Port SSH (par défaut, c'est 22)
-          script: |
-            # Télécharger la dernière image Docker depuis DockerHub
-            docker pull yourdockerhubusername/cowsay-go:latest
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-            # Exécuter le conteneur Docker
-            docker run -d --rm --name cowsay-container yourdockerhubusername/cowsay-go:latest
+      # Étape 6 : Créer et pousser l'image Docker
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: battaba/cowsay-go:latest 
+          labels: ${{ steps.meta.outputs.labels }}
