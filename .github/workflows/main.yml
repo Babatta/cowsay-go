@@ -38,10 +38,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Étape 6 : Créer et pousser l'image Docker
+ # Étape 6 : Créer et pousser l'image Docker
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: battaba/cowsay-go:latest
+          platforms: linux/amd64,linux/arm64 
+          push: true  
+          tags: battaba/cowsay-go:latest 
+          labels: ${{ steps.meta.outputs.labels }}
+
