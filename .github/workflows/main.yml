@@ -17,48 +17,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Étape 2 : Se rendre dans le répertoire contenant go.mod (facultatif, pas nécessaire si on utilise des chemins relatifs)
-      # Ici, ce n'est pas nécessaire puisque le workflow commence déjà dans le bon répertoire.
-      # - name: Navigate to project directory
-      #   run: cd /workspaces/cowsay-go
-
-      # Étape 3 : Installer Go
+      # Étape 2 : Installer Go 1.23
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.20'
+          go-version: '1.23'
 
-      # Étape 4 : Installer les dépendances
+      # Étape 3 : Installer les dépendances
       - name: Install dependencies
         run: go mod tidy
 
-      # Étape 5 : Compiler le code Go
+      # Étape 4 : Compiler le code Go
       - name: Build Go program
         run: go build -o cowsay .
 
-      # Étape 6 : Connexion à Docker Hub
+      # Étape 5 : Connexion à Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Étape 7 : Créer et pousser l'image Docker
+      # Étape 6 : Créer et pousser l'image Docker
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: battaba/cowsay-go:latest
-          
-      # Optionnel : Ajouter un tag Docker avec la version de Git (par exemple `v1.0.0` ou `v1.1.0`)
-      - name: Tag Docker image with version
-        run: |
-          VERSION=$(git describe --tags --abbrev=0)
-          docker tag battaba/cowsay-go:latest battaba/cowsay-go:$VERSION
-
-      # Optionnel : Pousser ce tag sur Docker Hub
-      - name: Push tagged Docker image
-        run: |
-          VERSION=$(git describe --tags --abbrev=0)
-          docker push battaba/cowsay-go:$VERSION
