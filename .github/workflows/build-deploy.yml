@@ -1,54 +1,71 @@
 name: Build & Deploy
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Exécution quotidienne (minuit)
   push:
     branches:
       - main
-      - battaba  # Ajouter battaba pour que le workflow se déclenche aussi sur cette branche
 
 jobs:
+  # Job de Build
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Étape 1 : Vérifier le code source
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Étape 2 : Installer Go 1.23
+      # Étape 1 : Installer Go et autres dépendances
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.23'
+          go-version: '1.20'
 
-      # Étape 3 : Installer les dépendances
       - name: Install dependencies
         run: go mod tidy
 
-      # Étape 4 : Compiler le code Go
+      # Étape 2 : Compiler le programme Go
       - name: Build Go program
-        run: go build -o cowsay .
+        run: go build -o bin/cowsay .
 
-      # Étape 5 : Connexion à Docker Hub
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-  # Étape 6 : Activer Docker Buildx pour le support multi-plateforme
-      - name: Set up Docker Buildx
-        run: |
-          docker buildx create --use  # Créer et activer un builder multi-plateforme
-
-      # Étape 7 : Créer et pousser l'image Docker
+      # Étape 3 : Construire et pousser l'image Docker
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64 
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: battaba/cowsay-go:latest 
+          tags: battaba/cowsay-go:latest
+          labels: ${{ steps.meta.outputs.labels }}
 
+      # Étape 4 : Sauvegarder le binaire en tant qu'artefact
+      - name: Save binary as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cowsay-binary
+          path: bin/cowsay
+
+  # Job de Déploiement
+  deploy:
+    runs-on: self-hosted  # Utilisation d'un runner auto-hébergé
+    needs: build  # Le déploiement dépend du succès du job build
+
+    steps:
+      # Étape 1 : Télécharger l'artefact contenant le binaire
+      - name: Download binary artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: cowsay-binary
+          path: ./bin
+
+      # Étape 2 : Déployer l'application sur le serveur
+      - name: Deploy application on server
+        run: |
+          # Si nécessaire, arrêter et supprimer les conteneurs Docker existants
+          docker stop cowsay || true
+          docker rm cowsay || true
+          
+          # Ajouter les permissions d'exécution au binaire téléchargé
+          chmod +x ./bin/cowsay
+
+          # Exécuter le binaire en arrière-plan (comme démon)
+          nohup ./bin/cowsay "Hello from GitHub Actions!" &
