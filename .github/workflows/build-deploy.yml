@@ -6,20 +6,17 @@ on:
       - main  # Déclenche le workflow sur un push à la branche main
 
 jobs:
-  # Job de Déploiement
   deploy:
-    runs-on: self-hosted  # Utilisation d'un runner auto-hébergé
-    needs: build  # Le déploiement dépend du succès du job build
+    runs-on: self-hosted
+    needs: build
 
     steps:
-      # Étape 1 : Télécharger l'artefact contenant le binaire
       - name: Download binary artifact
         uses: actions/download-artifact@v3
         with:
-          name: cowsay-binary  # Nom de l'artefact téléchargé
-          path: ./bin          # Répertoire où le binaire sera téléchargé
+          name: cowsay-binary
+          path: ./bin      
 
-      # Étape 2 : Déployer l'application sur le serveur
       - name: Deploy application on server
         run: |
           # Si nécessaire, arrêter et supprimer les conteneurs Docker existants
