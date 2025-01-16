@@ -5,7 +5,7 @@ on:
     - cron: '0 0 * * *'  # Exécution quotidienne (minuit)
   push:
     branches:
-      - main  
+      - main  # Déclenche le workflow sur un push à la branche main
   workflow_dispatch:
     inputs:
       version:
@@ -22,20 +22,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: '1.23'
 
-      
+
       - name: Install dependencies
         run: go mod tidy
 
-      
+
       - name: Build Go program
         run: go build -o cowsay .
 
+      - name: Check if cowsay binary exists
+        run: |
+          if [ ! -f ./cowsay ]; then
+            echo "Error: cowsay binary not found!"
+            exit 1
+          else
+            echo "cowsay binary found."
+          fi
+
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cowsay-binary
+          path: ./cowsay
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -48,29 +62,36 @@ jobs:
         run: |
           docker buildx create --use  # Créer et activer un builder multi-plateforme
 
-    
+     
       - name: Build Docker image
         run: |
           docker build -t battaba/cowsay-go:${{ github.event.inputs.version || 'latest' }} .
 
-    
+
       - name: Push Docker image to Docker Hub
         run: |
           docker push battaba/cowsay-go:${{ github.event.inputs.version || 'latest' }}
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build 
 
     steps:
-     
       - name: Download binary artifact
         uses: actions/download-artifact@v3
         with:
           name: cowsay-binary
           path: ./bin
 
-    
+      - name: Check if cowsay binary is downloaded
+        run: |
+          if [ ! -f ./bin/cowsay ]; then
+            echo "Error: cowsay binary not found in the downloaded artifact!"
+            exit 1
+          else
+            echo "cowsay binary found in the downloaded artifact."
+          fi
+
       - name: Deploy application
         run: |
           chmod +x ./bin/cowsay
