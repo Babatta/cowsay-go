@@ -1,22 +1,75 @@
-name: Deploy Go Application
+name: Build, Deploy, and Publish Docker Image
 
 on:
+  schedule:
+    - cron: '0 0 * * *'  # Exécution quotidienne (minuit)
   push:
     branches:
       - main  # Déclenche le workflow sur un push à la branche main
-
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version de l'image Docker"
+        required: true
+        default: "latest"
+  #------------------JOBS
 jobs:
-  deploy:
-    runs-on: self-hosted
-    needs: build
+  build:
+    runs-on: ubuntu-latest
 
     steps:
+      # Étape 1 : Vérifier le code source
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Étape 2 : Installer Go 1.23
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.23'
+
+      # Étape 3 : Installer les dépendances
+      - name: Install dependencies
+        run: go mod tidy
+
+      # Étape 4 : Compiler le code Go
+      - name: Build Go program
+        run: go build -o cowsay .
+
+      # Étape 5 : Connexion à Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Étape 6 : Activer Docker Buildx pour le support multi-plateforme
+      - name: Set up Docker Buildx
+        run: |
+          docker buildx create --use  # Créer et activer un builder multi-plateforme
+
+      # Étape 7 : Créer et pousser l'image Docker avec la version spécifiée
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64 
+          push: true
+          tags: battaba/cowsay-go:${{ github.event.inputs.version || 'latest' }} 
+
+  deploy:
+    runs-on: self-hosted 
+    needs: build  
+
+    steps:
+      # Étape 1 : Télécharger l'artefact contenant le binaire
       - name: Download binary artifact
         uses: actions/download-artifact@v3
         with:
-          name: cowsay-binary
-          path: ./bin      
+          name: cowsay-binary  
+          path: ./bin          
 
+      # Étape 2 : Déployer l'application sur le serveur
       - name: Deploy application on server
         run: |
           # Si nécessaire, arrêter et supprimer les conteneurs Docker existants
