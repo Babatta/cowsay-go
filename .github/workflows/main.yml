@@ -6,12 +6,12 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Permet l'execution du le workflow manuellement
+  workflow_dispatch:
     inputs:
       version:
-        description: 'Version de l image Docker'
+        description: "Version de l'image Docker"
         required: true
-        default: 'latest'  # Valeur par défaut si aucune version n'est spécifié
+        default: "latest"  # Valeur par défaut si aucune version n'est spécifiée
 
 jobs:
   build:
@@ -53,6 +53,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64 
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: battaba/cowsay-go:${{ github.event.inputs.version }}  # Utilisatio de la version saisie dans l'input
+          tags: battaba/cowsay-go:${{ github.event.inputs.version }}  # Utilisation de la version définie dans le dispatch
