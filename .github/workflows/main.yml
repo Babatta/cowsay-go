@@ -9,7 +9,7 @@ on:
   workflow_dispatch:  # Permet l'execution du le workflow manuellement
     inputs:
       version:
-        description: 'Version de l\'image Docker'
+        description: 'Version de l'image Docker'
         required: true
         default: 'latest'  # Valeur par défaut si aucune version n'est spécifié
 
