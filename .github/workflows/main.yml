@@ -6,13 +6,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version de l'image Docker"
-        required: true
-        default: "latest"  # Valeur par défaut si aucune version n'est spécifiée
-
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,16 +37,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Étape 6 : Activer Docker Buildx pour le support multi-plateforme
+  # Étape 6 : Activer Docker Buildx pour le support multi-plateforme
       - name: Set up Docker Buildx
         run: |
-          docker buildx create --use 
+          docker buildx create --use  # Créer et activer un builder multi-plateforme
 
       # Étape 7 : Créer et pousser l'image Docker
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64 
           push: true
-          tags: battaba/cowsay-go:${{ github.event.inputs.version }}  # Utilisation de la version définie dans le dispatch
+          tags: battaba/cowsay-go:latest 
