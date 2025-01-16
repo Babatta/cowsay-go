@@ -46,7 +46,7 @@ jobs:
       # Étape 6 : Activer Docker Buildx pour le support multi-plateforme
       - name: Set up Docker Buildx
         run: |
-          docker buildx create --use  # Créer et activer un builder multi-plateforme
+          docker buildx create --use 
 
       # Étape 7 : Créer et pousser l'image Docker
       - name: Build and push Docker image
